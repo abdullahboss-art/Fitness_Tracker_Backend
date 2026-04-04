@@ -14,7 +14,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware
+// Middleware - FormData ke liye multer ki zaroorat nahi, express.json kaafi hai
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -52,18 +52,20 @@ app.get('/api/health', (req, res) => {
 app.post('/User/register', async (req, res) => {
   try {
     const { username, name, email, password } = req.body;
+    
     console.log('📝 Register attempt:', { username, name, email });
     
-    // Check if user exists
+    if (!username || !name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+    
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
     
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user (frontend se 'name' aa raha hai, backend mein 'fullName' hai)
     const user = new User({ 
       username, 
       fullName: name, 
@@ -85,11 +87,6 @@ app.post('/User/register', async (req, res) => {
 // Root Route
 app.get('/', (req, res) => {
   res.json({ message: 'Fitness Tracker Backend is running!' });
-});
-
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
 });
 
 module.exports = app;
