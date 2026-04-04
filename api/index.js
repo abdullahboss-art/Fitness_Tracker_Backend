@@ -2,9 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
 require('dotenv').config();
 
 const app = express();
+const upload = multer(); // for parsing multipart/form-data
 
 // CORS
 app.use(cors({
@@ -14,16 +16,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware - FormData ke liye multer ki zaroorat nahi, express.json kaafi hai
+// Middleware - JSON and FormData both
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error('❌ MONGODB_URI is not defined');
-}
-
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err.message));
@@ -48,9 +46,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ✅ YEH ROUTE TUMHARA FRONTEND CALL KAR RAHA HAI
-app.post('/User/register', async (req, res) => {
+// ✅ Register Route with multer for FormData
+app.post('/User/register', upload.none(), async (req, res) => {
   try {
+    // FormData se values lo
     const { username, name, email, password } = req.body;
     
     console.log('📝 Register attempt:', { username, name, email });
